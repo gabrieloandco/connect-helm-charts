@@ -40,6 +40,7 @@ spec:
           {{ .Values.connect.dataVolume.type }}: {{- toYaml .Values.connect.dataVolume.values | nindent 12 }}
         - name: credentials
           secret:
+            defaultMode: 420
             secretName: {{ .Values.connect.credentialsName }}
         {{- if .Values.connect.tls.enabled }}
         - name: tls-cert
@@ -60,10 +61,7 @@ spec:
             {{- toYaml .Values.connect.api.resources | nindent 12 }}
           env:
             - name: OP_SESSION
-              valueFrom:
-                secretKeyRef:
-                  name: {{ .Values.connect.credentialsName }}
-                  key: {{ .Values.connect.credentialsKey }}
+              value: "/credentials/{{ .Values.connect.credentialsKey }}"
             - name: OP_BUS_PORT
               value: "11220"
             - name: OP_BUS_PEERS
@@ -104,6 +102,8 @@ spec:
             - name: tls-cert
               mountPath: /home/opuser/.op/certs
             {{- end }}
+            - mountPath: /credentials
+              name: credentials
         - name: connect-sync
           image: {{ .Values.connect.sync.imageRepository }}:{{ tpl .Values.connect.version . }}
           imagePullPolicy: {{ .Values.connect.imagePullPolicy }}
@@ -117,10 +117,7 @@ spec:
             - name: OP_HTTP_PORT
               value: "{{ .Values.connect.sync.httpPort }}"
             - name: OP_SESSION
-              valueFrom:
-                secretKeyRef:
-                  name: {{ .Values.connect.credentialsName }}
-                  key: {{ .Values.connect.credentialsKey }}
+              value: "/credentials/{{ .Values.connect.credentialsKey }}"
             - name: OP_BUS_PORT
               value: "11221"
             - name: OP_BUS_PEERS
